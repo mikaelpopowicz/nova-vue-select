@@ -3,6 +3,7 @@
 namespace Mikaelpopowicz\NovaVueSelect;
 
 use Laravel\Nova\Fields\Select;
+use Laravel\Nova\Http\Requests\NovaRequest;
 use Laravel\Nova\Resource;
 
 class NovaVueSelect extends Select
@@ -15,19 +16,9 @@ class NovaVueSelect extends Select
     public $component = 'nova-vue-select';
 
     /**
-     * Set the options for the select menu.
-     *
-     * @param  array  $options
-     * @return $this
+     * @var string
      */
-    public function options($options)
-    {
-        return $this->withMeta([
-            'options' => collect($options ?? [])->map(function ($label, $value) {
-                return is_array($label) ? $label + ['value' => $value] : ['label' => $label, 'value' => $value];
-            })->values()->all(),
-        ]);
-    }
+    protected $resourceClass;
 
     /**
      * Use resource as option.
@@ -41,9 +32,32 @@ class NovaVueSelect extends Select
             throw new \InvalidArgumentException($resource . ' is not a Nova resource');
         }
 
+        $this->resourceClass = $resource;
+
         return $this->withMeta([
             'resource' => $resource::uriKey(),
-            'resourceTitle' => $resource::$title,
+            'resourceAttribute' => $resource::$title,
         ]);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function resolve($resource, $attribute = null)
+    {
+        parent::resolve($resource, $attribute);
+
+        if ($this->resourceClass && $this->value) {
+            /** @var \Illuminate\Database\Eloquent\Model $model */
+            $model = $this->resourceClass::newModel()->find($this->value);
+
+            if ($model) {
+                /** @var \Laravel\Nova\Resource $resource */
+                $resource = new $this->resourceClass($model);
+                $this->withMeta([
+                    'resourceValue' => $resource->title(),
+                ]);
+            }
+        }
     }
 }

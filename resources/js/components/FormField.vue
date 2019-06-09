@@ -39,8 +39,7 @@ export default {
         return {
             isLoading: false,
             values: this.field.options || [],
-            resourceLabel: this.field.resourceTitle || 'title',
-            resourceValue: 'id',
+            attributeToCompare: this.field.resourceAttribute || 'title',
         }
     },
 
@@ -53,7 +52,8 @@ export default {
                 await this.fetchResource()
             }
 
-            let initial = _.find(this.values, o => o.value === parseInt(this.field.value))
+            let value = this.resource ? parseInt(this.field.value) : this.field.value
+            let initial = _.find(this.values, o => o.value === value)
             this.value = initial || null
         },
 
@@ -82,8 +82,8 @@ export default {
 
             while (response) {
                 let values = response.data.resources.map((r) => {
-                    let label = _.find(r.fields, f => f.attribute === this.resourceLabel)
-                    let value = _.find(r.fields, f => f.attribute === this.resourceValue)
+                    let label = _.find(r.fields, f => f.attribute === this.attributeToCompare)
+                    let value = _.find(r.fields, f => f.attribute === 'id')
 
                     return {
                         label: label && label.value || null,
