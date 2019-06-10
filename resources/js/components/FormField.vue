@@ -28,7 +28,7 @@
 <script>
     import _ from 'lodash'
     import Multiselect from 'vue-multiselect'
-    import storage from './../BelongsToFieldStorage'
+    import storage from './../VueSelectFieldStorage'
     import { FormField, HandlesValidationErrors, PerformsSearches } from 'laravel-nova'
 
     export default {
@@ -91,7 +91,7 @@
             getAvailableResources() {
                 this.isLoading = true
                 return storage
-                    .fetchAvailableResources(this.resourceName, this.field.attribute, this.queryParams)
+                    .fetchAvailableResources(this.field.resourceName, this.queryParams)
                     .then(({ data: { resources, softDeletes, withTrashed } }) => {
                         if (this.initializingWithExistingResource) {
                             this.withTrashed = withTrashed

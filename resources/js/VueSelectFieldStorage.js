@@ -1,7 +1,7 @@
 export default {
-    fetchAvailableResources(resourceName, fieldAttribute, params) {
+    fetchAvailableResources(resourceName, params) {
         return Nova.request().get(
-            `/nova-api/${resourceName}/associatable/${fieldAttribute}`,
+            `/nova-vendor/nova-vue-select/${resourceName}`,
             params
         )
     },
