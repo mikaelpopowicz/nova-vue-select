@@ -19,7 +19,11 @@
                     :selectedLabel="__('Selected')"
                     :deselectLabel="__('Press enter to remove')"
                     :deselectGroupLabel="__('Press enter to deselect group')"
-            />
+                    :internal-search="false"
+            >
+                <span slot="noResult">{{ this.__('No result') }}</span>
+                <span slot="noOptions">{{ this.__('No options') }}</span>
+            </multiselect>
             <p v-else class="text-danger">{{ __('Resource is not defined') }}</p>
         </template>
     </default-field>
