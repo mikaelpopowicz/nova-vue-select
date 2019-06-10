@@ -2,113 +2,166 @@
     <default-field :field="field" :errors="errors">
         <template slot="field">
             <multiselect
-                :id="field.name"
-                :dusk="field.attribute"
-                v-model="value"
-                :options="values"
-                :disabled="isReadonly"
-                :loading="isLoading"
-                label="label"
-                track-by="value"
-                :class="errorClasses"
-                :placeholder="__('Choose an option')"
-                :selectLabel="__('Press enter to select')"
-                :selectGroupLabel="__('Press enter to select group')"
-                :selectedLabel="__('Selected')"
-                :deselectLabel="__('Press enter to remove')"
-                :deselectGroupLabel="__('Press enter to deselect group')"
+                    v-if="this.field.resourceName"
+                    :id="field.name"
+                    :dusk="field.attribute"
+                    v-model="selectedResource"
+                    :options="availableResources"
+                    :disabled="isReadonly"
+                    :loading="isLoading"
+                    label="display"
+                    track-by="value"
+                    @search-change="performSearch"
+                    :class="errorClasses"
+                    :placeholder="__('Search')"
+                    :selectLabel="__('Press enter to select')"
+                    :selectGroupLabel="__('Press enter to select group')"
+                    :selectedLabel="__('Selected')"
+                    :deselectLabel="__('Press enter to remove')"
+                    :deselectGroupLabel="__('Press enter to deselect group')"
             />
+            <p v-else class="text-danger">{{ __('Resource is not defined') }}</p>
         </template>
     </default-field>
 </template>
 
 <script>
-import Multiselect from 'vue-multiselect'
-import { FormField, HandlesValidationErrors } from 'laravel-nova'
+    import _ from 'lodash'
+    import Multiselect from 'vue-multiselect'
+    import storage from './../BelongsToFieldStorage'
+    import { FormField, HandlesValidationErrors, PerformsSearches } from 'laravel-nova'
 
-export default {
-    mixins: [FormField, HandlesValidationErrors],
+    export default {
+        mixins: [FormField, HandlesValidationErrors, PerformsSearches],
 
-    components: {
-        Multiselect
-    },
+        components: {
+            Multiselect
+        },
 
-    props: ['resourceName', 'resourceId', 'field'],
+        props: ['resourceName', 'resourceId', 'field'],
 
-    data: function () {
-        return {
+        data: () => ({
             isLoading: false,
-            values: this.field.options || [],
-            attributeToCompare: this.field.resourceAttribute || 'title',
-        }
-    },
-
-    methods: {
-        /*
-         * Set the initial, internal value for the field.
-         */
-        async setInitialValue() {
-            if (this.field.resource) {
-                await this.fetchResource()
-            }
-
-            let value = this.resource ? parseInt(this.field.value) : this.field.value
-            let initial = _.find(this.values, o => o.value === value)
-            this.value = initial || null
-        },
+            availableResources: [],
+            initializingWithExistingResource: false,
+            selectedResource: null,
+            selectedResourceId: null,
+            softDeletes: false,
+            withTrashed: false,
+            search: '',
+        }),
 
         /**
-         * Fill the given FormData object with the field's internal value.
+         * Mount the component.
          */
-        fill(formData) {
-            formData.append(this.field.attribute, this.value && this.value.value || '')
+        mounted() {
+            this.initializeComponent()
         },
 
-        /**
-         * Update the field's internal value.
-         */
-        handleChange(item) {
-            this.value = item && item.value || ''
-        },
+        methods: {
+            initializeComponent() {
+                if (this.field.resourceName) {
+                    this.withTrashed = false
+                    if (this.editingExistingResource) {
+                        this.initializingWithExistingResource = true
+                        this.selectedResourceId = this.field.resourceId
 
-        async fetchResource() {
-            this.isLoading = true
-            let options = []
-            let response = await Nova.request().get(`/nova-api/${this.field.resource}`, {
-                params: {
-                    perPage: 100
-                }
-            })
-
-            while (response) {
-                let values = response.data.resources.map((r) => {
-                    let label = _.find(r.fields, f => f.attribute === this.attributeToCompare)
-                    let value = _.find(r.fields, f => f.attribute === 'id')
-
-                    return {
-                        label: label && label.value || null,
-                        value: value && value.value || null,
+                        this.getAvailableResources().then(() => this.selectInitialResource())
                     }
-                })
 
-                options = options.concat(values)
-
-                if (response.data.next_page_url) {
-                    response = await Nova.request().get(response.data.next_page_url, {
-                        params: {
-                            perPage: response.data.per_page
-                        }
-                    })
-                } else {
-                    response = null
+                    this.determineIfSoftDeletes()
                 }
-            }
+            },
 
-            this.values = options
-            this.isLoading = false
+            /**
+             * Fill the forms formData with details from this field
+             */
+            fill(formData) {
+                formData.append(
+                    this.field.attribute,
+                    this.selectedResource ? this.selectedResource.value : ''
+                )
+
+                formData.append(this.field.attribute + '_trashed', this.withTrashed)
+            },
+
+            /**
+             * Get the resources that may be related to this resource.
+             */
+            getAvailableResources() {
+                this.isLoading = true
+                return storage
+                    .fetchAvailableResources(this.resourceName, this.field.attribute, this.queryParams)
+                    .then(({ data: { resources, softDeletes, withTrashed } }) => {
+                        if (this.initializingWithExistingResource) {
+                            this.withTrashed = withTrashed
+                        }
+
+                        // Turn off initializing the existing resource after the first time
+                        this.initializingWithExistingResource = false
+                        this.availableResources = resources
+                        this.softDeletes = softDeletes
+                        this.isLoading = false
+                    })
+            },
+
+            /**
+             * Determine if the relatd resource is soft deleting.
+             */
+            determineIfSoftDeletes() {
+                return storage.determineIfSoftDeletes(this.field.resourceName).then(response => {
+                    this.softDeletes = response.data.softDeletes
+                })
+            },
+
+            /**
+             * Select the initial selected resource
+             */
+            selectInitialResource() {
+                this.selectedResource = _.find(
+                    this.availableResources,
+                    r => r.value == this.selectedResourceId
+                )
+            },
+
+            /**
+             * Update the field's internal value.
+             */
+            handleChange(item) {
+                this.selectedResourceId = item.value || ''
+                this.selectInitialResource()
+            },
+
+            /**
+             * Clear the selected resource and availableResources
+             */
+            clearSelection() {
+            },
+        },
+
+        computed: {
+            /**
+             * Determine if we are editing an existing resource
+             */
+            editingExistingResource() {
+                return Boolean(this.field.resourceId)
+            },
+
+            /**
+             * Get the query params for getting available resources
+             */
+            queryParams() {
+                return {
+                    params: {
+                        current: this.selectedResourceId,
+                        first: this.initializingWithExistingResource,
+                        search: this.search,
+                        withTrashed: this.withTrashed,
+                    },
+                }
+            },
         }
-    },
-}
+    }
 </script>
 
 <style>
@@ -185,7 +238,7 @@ export default {
         margin-right: 10px;
         color: #fff;
         line-height: 1;
-        background: #41b883;
+        background: var(--primary);
         margin-bottom: 5px;
         white-space: nowrap;
         overflow: hidden;
@@ -346,14 +399,14 @@ export default {
     }
 
     .multiselect__option--highlight {
-        background: #41b883;
+        background: var(--primary);
         outline: none;
         color: white;
     }
 
     .multiselect__option--highlight:after {
         content: attr(data-select);
-        background: #41b883;
+        background: var(--primary);
         color: white;
     }
 
@@ -436,46 +489,5 @@ export default {
         line-height: 20px;
         display: inline-block;
         vertical-align: top;
-    }
-
-    *[dir="rtl"] .multiselect {
-        text-align: right;
-    }
-
-    *[dir="rtl"] .multiselect__select {
-        right: auto;
-        left: 1px;
-    }
-
-    *[dir="rtl"] .multiselect__tags {
-        padding: 8px 8px 0px 40px;
-    }
-
-    *[dir="rtl"] .multiselect__content {
-        text-align: right;
-    }
-
-    *[dir="rtl"] .multiselect__option:after {
-        right: auto;
-        left: 0;
-    }
-
-    *[dir="rtl"] .multiselect__clear {
-        right: auto;
-        left: 12px;
-    }
-
-    *[dir="rtl"] .multiselect__spinner {
-        right: auto;
-        left: 1px;
-    }
-
-    @keyframes spinning {
-        from {
-            transform: rotate(0);
-        }
-        to {
-            transform: rotate(2turn);
-        }
     }
 </style>

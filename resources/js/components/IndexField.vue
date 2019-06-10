@@ -2,20 +2,21 @@
     <span>
         <span v-if="field.resource && field.value">
             <router-link
-                :to="{
+                    v-if="field.resourceName && field.value"
+                    :to="{
                     name: 'detail',
                     params: {
-                        resourceName: field.resource,
+                        resourceName: field.resourceName,
                         resourceId: field.value,
                     },
                 }"
-                    class="no-underline dim text-primary font-bold"
+                    class="no-underline font-bold dim text-primary"
             >
-                {{ field.resourceValue }}
+                {{ field.selectedResourceDisplay }}
             </router-link>
         </span>
-        <span v-else-if="field.value">{{ field.value }}</span>
-        <span v-else>&mdash;</span>
+        <span v-else-if="field.resourceName">&mdash;</span>
+        <span v-else class="text-danger">{{ __('Resource is not defined') }}</span>
     </span>
 </template>
 
