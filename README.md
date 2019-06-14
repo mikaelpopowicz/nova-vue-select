@@ -24,6 +24,32 @@ composer require mikaelpopowicz/nova-vue-select
 ```php
 // in your Nova Resource
 
-NovaVueSelect('Field label', 'attribute', OtherResource::class),
+VueSelect('Field label', 'attribute', OtherResource::class),
 ```
 
+## Filter
+
+Create a Nova filter and make it inherit from VueSelectFilter. You may override constructor to set the Resource you want to fetch. 
+
+```php
+<?php
+
+namespace App\Nova\Filters;
+
+use App\Nova\User;
+use Illuminate\Http\Request;
+use Mikaelpopowicz\NovaVueSelect\VueSelectFilter;
+
+class UserFilter extends VueSelectFilter
+{
+    public function __construct()
+    {
+        parent::__construct(User::class);
+    }
+    
+    public function apply(Request $request, $query, $value)
+    {
+        return $query->where('user_id', '=', $value);
+    }
+}
+```
