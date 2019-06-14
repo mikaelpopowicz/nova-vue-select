@@ -36,30 +36,18 @@
 </template>
 
 <script>
-    import _ from 'lodash'
-    import Multiselect from 'vue-multiselect'
-    import storage from './../VueSelectFieldStorage'
     import { FormField, HandlesValidationErrors, PerformsSearches } from 'laravel-nova'
+    import Multiselect from 'vue-multiselect'
+    import Selectable from './Selectable'
 
     export default {
-        mixins: [FormField, HandlesValidationErrors, PerformsSearches],
+        mixins: [FormField, HandlesValidationErrors, PerformsSearches, Selectable],
 
         components: {
             Multiselect
         },
 
         props: ['resourceName', 'resourceId', 'field'],
-
-        data: () => ({
-            isLoading: false,
-            availableResources: [],
-            initializingWithExistingResource: false,
-            selectedResource: null,
-            selectedResourceId: null,
-            softDeletes: false,
-            withTrashed: false,
-            search: '',
-        }),
 
         /**
          * Mount the component.
@@ -96,80 +84,11 @@
             },
 
             /**
-             * Get the resources that may be related to this resource.
-             */
-            getAvailableResources() {
-                this.isLoading = true
-                return storage
-                    .fetchAvailableResources(this.field.resourceName, this.queryParams)
-                    .then(({ data: { resources, softDeletes, withTrashed } }) => {
-                        if (this.initializingWithExistingResource) {
-                            this.withTrashed = withTrashed
-                        }
-
-                        // Turn off initializing the existing resource after the first time
-                        this.initializingWithExistingResource = false
-                        this.availableResources = resources
-                        this.softDeletes = softDeletes
-                        this.isLoading = false
-                    })
-            },
-
-            /**
-             * Determine if the relatd resource is soft deleting.
-             */
-            determineIfSoftDeletes() {
-                return storage.determineIfSoftDeletes(this.field.resourceName).then(response => {
-                    this.softDeletes = response.data.softDeletes
-                })
-            },
-
-            /**
-             * Select the initial selected resource
-             */
-            selectInitialResource() {
-                this.selectedResource = _.find(
-                    this.availableResources,
-                    r => r.value == this.selectedResourceId
-                )
-            },
-
-            /**
              * Update the field's internal value.
              */
             handleChange(item) {
                 this.selectedResourceId = item.value || ''
                 this.selectInitialResource()
-            },
-
-            /**
-             * Perform a search to get the relatable resources.
-             */
-            performSearch(search) {
-                this.isLoading = true
-                this.search = search
-
-                const trimmedSearch = search.trim()
-                // If the user performs an empty search, it will load all the results
-                // so let's just set the availableResources to an empty array to avoid
-                // loading a huge result set
-                if (trimmedSearch == '') {
-                    this.clearSelection()
-
-                    return
-                }
-
-                this.debouncer(() => {
-                    this.selectedResource = ''
-                    this.getAvailableResources(trimmedSearch)
-                }, 500)
-            },
-
-            /**
-             * Clear the selected resource and availableResources
-             */
-            clearSelection() {
-                this.isLoading = false
             },
         },
 
@@ -179,21 +98,7 @@
              */
             editingExistingResource() {
                 return Boolean(this.field.resourceId)
-            },
-
-            /**
-             * Get the query params for getting available resources
-             */
-            queryParams() {
-                return {
-                    params: {
-                        current: this.selectedResourceId,
-                        first: this.initializingWithExistingResource,
-                        search: this.search,
-                        withTrashed: this.withTrashed,
-                    },
-                }
-            },
+            }
         }
     }
 </script>
