@@ -6,7 +6,7 @@ use Laravel\Nova\Fields\Field;
 use Laravel\Nova\Fields\FormatsRelatableDisplayValues;
 use Laravel\Nova\Resource;
 
-class NovaVueSelect extends Field
+class VueSelect extends Field
 {
     use FormatsRelatableDisplayValues;
 
@@ -15,7 +15,7 @@ class NovaVueSelect extends Field
      *
      * @var string
      */
-    public $component = 'nova-vue-select';
+    public $component = 'vue-select';
 
     /**
      * The class name of the related resource.

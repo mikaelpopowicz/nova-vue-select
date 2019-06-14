@@ -2,3 +2,70 @@
 
 @import "~vue-multiselect/dist/vue-multiselect.min.css";
 
+.multiselect {
+    color: var(#{'--80'});
+    font-size: inherit;
+    min-height: 2.25rem;
+
+    &--above {
+        .multiselect__content-wrapper {
+            border-top-color: var(#{'--60'});
+        }
+    }
+
+    &__content {
+        &-wrapper {
+            border-color: var(#{'--60'});
+        }
+    }
+
+    &__input {
+        padding-left: initial;
+    }
+
+    &__input,
+    &__single {
+        //line-height: 1rem;
+        //min-height: 1rem;
+        padding-top: .5rem;
+    }
+
+    &__option {
+        &--highlight + :after {
+            background: var(--primary);
+        }
+    }
+
+    &__placeholder {
+        color: var(#{'--80'});
+        padding-top: .5rem;
+    }
+
+    &__select {
+        &:before {
+
+        }
+    }
+
+    &__single {
+        padding-left: initial;
+    }
+
+    &__spinner {
+        border-top-right-radius: .5rem;
+        border-bottom-right-radius: .5rem;
+        height: 34px;
+
+        &:after,
+        &:before {
+            border-top-color: var(--primary);
+        }
+    }
+    &__tags {
+        border-color: var(#{'--60'});
+        border-radius: .5rem;
+        font-size: 16px;
+        min-height: inherit;
+        padding: 0 2rem 0 .75rem;
+    }
+}

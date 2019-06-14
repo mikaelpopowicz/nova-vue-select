@@ -1,7 +1,7 @@
 export default {
     fetchAvailableResources(resourceName, params) {
         return Nova.request().get(
-            `/nova-vendor/nova-vue-select/${resourceName}`,
+            `/nova-vendor/vue-select/${resourceName}`,
             params
         )
     },

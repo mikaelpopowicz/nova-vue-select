@@ -21,8 +21,8 @@ class FieldServiceProvider extends ServiceProvider
         });
 
         Nova::serving(function (ServingNova $event) {
-            Nova::script('nova-vue-select', __DIR__.'/../dist/js/field.js');
-            Nova::style('nova-vue-select', __DIR__.'/../dist/css/field.css');
+            Nova::script('vue-select', __DIR__.'/../dist/js/field.js');
+            Nova::style('vue-select', __DIR__.'/../dist/css/field.css');
         });
     }
 
@@ -39,7 +39,7 @@ class FieldServiceProvider extends ServiceProvider
 
         Route::middleware(['nova'])
             ->namespace('Mikaelpopowicz\NovaVueSelect\Http\Controllers')
-            ->prefix('nova-vendor/nova-vue-select')
+            ->prefix('nova-vendor/vue-select')
             ->group(__DIR__.'/../routes/api.php');
     }
 
