@@ -21,8 +21,14 @@
                     :deselectGroupLabel="__('Press enter to deselect group')"
                     :internal-search="false"
             >
-                <span slot="noResult">{{ this.__('No result') }}</span>
-                <span slot="noOptions">{{ this.__('No options') }}</span>
+                <div slot="loading"></div>
+                <template slot="beforeList" v-if="isLoading">
+                    <span class="multiselect__option">
+                        <loader with="30" />
+                    </span>
+                </template>
+                <template slot="noResult">{{ this.__('No result') }}</template>
+                <template slot="noOptions">{{ this.__('No options') }}</template>
             </multiselect>
             <p v-else class="text-danger">{{ __('Resource is not defined') }}</p>
         </template>
