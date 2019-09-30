@@ -2,6 +2,8 @@
 
 @import "~vue-multiselect/dist/vue-multiselect.min.css";
 
+$primary-color: var(--primary);
+
 .multiselect {
     color: var(#{'--80'});
     font-size: inherit;
@@ -16,6 +18,7 @@
     &__content {
         &-wrapper {
             border-color: var(#{'--60'});
+            z-index: 30;
         }
     }
 
@@ -31,7 +34,7 @@
     }
 
     &__option {
-        &--highlight + :after {
+        &--highlight, &--highlight:after {
             background: var(--primary);
         }
     }
@@ -61,11 +64,29 @@
             border-top-color: var(--primary);
         }
     }
+
+    &__tag {
+        background: var(--primary);
+        &-icon {
+            &:after {
+                color: var(--white);
+            }
+            &:focus, &:hover {
+                color: var(--white);
+                background: var(--primary-dark);
+            }
+        }
+    }
+
     &__tags {
         border-color: var(#{'--60'});
         border-radius: .5rem;
         font-size: 16px;
         min-height: inherit;
         padding: 0 2rem 0 .75rem;
+        &-wrap {
+            margin-top: 0.50rem;
+            display: block;
+        }
     }
 }

@@ -4,10 +4,11 @@ import storage from './../VueSelectFieldStorage'
 export default {
     data: () => ({
         isLoading: false,
+        isMultiple: false,
         availableResources: [],
-        initializingWithExistingResource: false,
-        selectedResource: null,
-        selectedResourceId: null,
+        initializingWithExistingResources: false,
+        selectedResources: null,
+        selectedResourcesIds: null,
         softDeletes: false,
         withTrashed: false,
         search: '',
@@ -22,12 +23,12 @@ export default {
             return storage
                 .fetchAvailableResources(this.searchableResourceName, this.queryParams)
                 .then(({ data: { resources, softDeletes, withTrashed } }) => {
-                    if (this.initializingWithExistingResource) {
+                    if (this.initializingWithExistingResources) {
                         this.withTrashed = withTrashed
                     }
 
                     // Turn off initializing the existing resource after the first time
-                    this.initializingWithExistingResource = false
+                    this.initializingWithExistingResources = false
                     this.availableResources = resources
                     this.softDeletes = softDeletes
                     this.isLoading = false
@@ -35,7 +36,7 @@ export default {
         },
 
         /**
-         * Determine if the relatd resource is soft deleting.
+         * Determine if the related resource is soft deleting.
          */
         determineIfSoftDeletes() {
             return storage.determineIfSoftDeletes(this.searchableResourceName).then(response => {
@@ -44,13 +45,10 @@ export default {
         },
 
         /**
-         * Select the initial selected resource
+         * Select the initial selected resources
          */
-        selectInitialResource() {
-            this.selectedResource = _.find(
-                this.availableResources,
-                r => r.value == this.selectedResourceId
-            )
+        selectInitialResources() {
+            this.selectedResources = _.filter(this.availableResources, r => this.selectedResourcesIds.includes(r.value))
         },
 
         /**
@@ -71,7 +69,7 @@ export default {
             this.search = trimmedSearch
 
             this.debouncer(() => {
-                this.selectedResource = ''
+                this.selectedResources = []
                 this.getAvailableResources()
             }, 500)
         },
@@ -95,10 +93,11 @@ export default {
         queryParams() {
             return {
                 params: {
-                    current: this.selectedResourceId,
+                    current: this.selectedResourcesIds,
                     first: this.initializingWithExistingResource,
                     search: this.search,
                     withTrashed: this.withTrashed,
+                    multiple: this.isMultiple,
                 },
             }
         },

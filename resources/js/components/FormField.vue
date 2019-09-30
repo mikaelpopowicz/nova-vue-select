@@ -9,6 +9,7 @@
                     :options="availableResources"
                     :disabled="isReadonly"
                     :loading="isLoading"
+                    :multiple="isMultiple"
                     label="display"
                     track-by="value"
                     @search-change="performSearch"
@@ -47,7 +48,7 @@
             Multiselect
         },
 
-        props: ['resourceName', 'resourceId', 'field'],
+        props: ['resourceName', 'resourceIds', 'field'],
 
         /**
          * Mount the component.
@@ -61,10 +62,10 @@
                 if (this.field.resourceName) {
                     this.withTrashed = false
                     if (this.editingExistingResource) {
-                        this.initializingWithExistingResource = true
-                        this.selectedResourceId = this.field.resourceId
+                        this.initializingWithExistingResources = true
+                        this.selectedResourcesIds = this.field.resourceIds
 
-                        this.getAvailableResources().then(() => this.selectInitialResource())
+                        this.getAvailableResources().then(() => this.selectInitialResources())
                     }
 
                     this.determineIfSoftDeletes()
@@ -77,7 +78,7 @@
             fill(formData) {
                 formData.append(
                     this.field.attribute,
-                    this.selectedResource ? this.selectedResource.value : ''
+                    this.selectedResources.map(r => r.value)
                 )
 
                 formData.append(this.field.attribute + '_trashed', this.withTrashed)
@@ -87,8 +88,8 @@
              * Update the field's internal value.
              */
             handleChange(item) {
-                this.selectedResourceId = item.value || ''
-                this.selectInitialResource()
+                this.selectedResourcesIds = item.value || ''
+                this.selectInitialResources()
             },
         },
 
@@ -97,7 +98,7 @@
              * Determine if we are editing an existing resource
              */
             editingExistingResource() {
-                return Boolean(this.field.resourceId)
+                return Boolean(this.field.resourceIds.length)
             }
         }
     }

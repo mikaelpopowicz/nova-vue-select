@@ -79,6 +79,8 @@ class VueSelect extends Field
     {
         parent::resolve($resource, $attribute);
 
+        $values = is_array($this->value) ? $this->value : [$this->value];
+
         $this->resourceId = $this->value;
 
         /** @var \Illuminate\Database\Eloquent\Model $model */
