@@ -48,8 +48,11 @@ export default {
          * Select the initial selected resources
          */
         selectInitialResources() {
-            console.log(this.selectedResourcesIds.includes(100));
             this.selectedResources = _.filter(this.availableResources, r => this.selectedResourcesIds.includes(r.value))
+
+            if (! this.isMultiple) {
+                this.selectedResources = this.selectedResources.length ? this.selectedResources[0] : null
+            }
         },
 
         /**
