@@ -4,6 +4,7 @@ namespace Mikaelpopowicz\NovaVueSelect;
 
 use Laravel\Nova\Fields\Field;
 use Laravel\Nova\Fields\FormatsRelatableDisplayValues;
+use Laravel\Nova\Http\Requests\NovaRequest;
 use Laravel\Nova\Resource;
 
 class VueSelect extends Field
@@ -36,14 +37,14 @@ class VueSelect extends Field
      *
      * @var string
      */
-    public $resourceId;
+    public $resourceIds;
 
     /**
-     * The display value of the related Eloquent model.
+     * The display values of the related Eloquent models.
      *
      * @var string
      */
-    public $selectedResourceDisplay;
+    public $selectedResourcesDisplay;
 
     /**
      * The column that should be displayed for the field.
@@ -51,6 +52,11 @@ class VueSelect extends Field
      * @var \Closure
      */
     public $display;
+
+    /**
+     * @var boolean
+     */
+    public $isMultiple = false;
 
     /**
      * Create a new field.
@@ -79,18 +85,55 @@ class VueSelect extends Field
     {
         parent::resolve($resource, $attribute);
 
-        $values = is_array($this->value) ? $this->value : [$this->value];
+        $this->resourceIds = is_array($this->value) ? $this->value : [$this->value];
+        $this->resourceIds = array_map(function ($id) {
+            return (int) $id;
+        }, $this->resourceIds);
 
-        $this->resourceId = $this->value;
+        $this->selectedResourcesDisplay = collect($this->resourceIds)
+            ->map(function ($id) {
+                /** @var \Illuminate\Database\Eloquent\Model $model */
+                $model = forward_static_call([$this->resourceClass, 'newModel']);
+                $model = $model->newQuery()->find($id);
 
-        /** @var \Illuminate\Database\Eloquent\Model $model */
-        $model = forward_static_call([$this->resourceClass, 'newModel']);
-        $model = $model->newQuery()->find($this->value);
+                return ! is_null($model)
+                    ? [
+                        'id' => $id,
+                        'display' => $this->formatDisplayValue(new $this->resourceClass($model)),
+                    ]
+                    : null;
+            })
+            ->filter()
+            ->toArray();
+    }
 
-        if ($model) {
-            $resource = new $this->resourceClass($model);
-            $this->selectedResourceDisplay = $this->formatDisplayValue($resource);
+    /**
+     * Hydrate the given attribute on the model based on the incoming request.
+     *
+     * @param  \Laravel\Nova\Http\Requests\NovaRequest  $request
+     * @param  string  $requestAttribute
+     * @param  object  $model
+     * @param  string  $attribute
+     * @return mixed
+     */
+    protected function fillAttributeFromRequest(NovaRequest $request, $requestAttribute, $model, $attribute)
+    {
+        if ($request->exists($requestAttribute)) {
+            $value = $request[$requestAttribute];
+
+            $model->{$attribute} = $this->isNullValue($value) ? null : ($this->isMultiple ? explode(',', $value) : $value);
         }
+    }
+
+    /**
+     * @param  bool  $value
+     * @return $this
+     */
+    public function multiple(bool $value = true)
+    {
+        $this->isMultiple = $value;
+
+        return $this;
     }
 
     /**
@@ -104,8 +147,9 @@ class VueSelect extends Field
             'resourceName' => $this->resourceName,
             'label' => forward_static_call([$this->resourceClass, 'label']),
             'singularLabel' => $this->singularLabel ?? $this->name ?? forward_static_call([$this->resourceClass, 'singularLabel']),
-            'resourceId' => $this->resourceId,
-            'selectedResourceDisplay' => $this->selectedResourceDisplay,
+            'resourceIds' => $this->resourceIds,
+            'selectedResourcesDisplay' => $this->selectedResourcesDisplay,
+            'multiple' => $this->isMultiple,
         ], $this->meta);
     }
 }

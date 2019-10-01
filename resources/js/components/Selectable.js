@@ -48,6 +48,7 @@ export default {
          * Select the initial selected resources
          */
         selectInitialResources() {
+            console.log(this.selectedResourcesIds.includes(100));
             this.selectedResources = _.filter(this.availableResources, r => this.selectedResourcesIds.includes(r.value))
         },
 
@@ -94,7 +95,7 @@ export default {
             return {
                 params: {
                     current: this.selectedResourcesIds,
-                    first: this.initializingWithExistingResource,
+                    first: this.initializingWithExistingResources,
                     search: this.search,
                     withTrashed: this.withTrashed,
                     multiple: this.isMultiple,

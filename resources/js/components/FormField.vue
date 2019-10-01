@@ -2,27 +2,27 @@
     <default-field :field="field" :errors="errors">
         <template slot="field">
             <multiselect
-                    v-if="this.field.resourceName"
-                    :id="field.name"
-                    :dusk="field.attribute"
-                    v-model="selectedResource"
-                    :options="availableResources"
-                    :disabled="isReadonly"
-                    :loading="isLoading"
-                    :multiple="isMultiple"
-                    label="display"
-                    track-by="value"
-                    @search-change="performSearch"
-                    :class="errorClasses"
-                    :placeholder="__('Search')"
-                    :selectLabel="__('Press enter to select')"
-                    :selectGroupLabel="__('Press enter to select group')"
-                    :selectedLabel="__('Selected')"
-                    :deselectLabel="__('Press enter to remove')"
-                    :deselectGroupLabel="__('Press enter to deselect group')"
-                    :internal-search="false"
+                ref="input"
+                v-if="this.field.resourceName"
+                :id="field.name"
+                :dusk="field.attribute"
+                v-model="selectedResources"
+                :options="availableResources"
+                :disabled="isReadonly"
+                :loading="isLoading"
+                :multiple="isMultiple"
+                label="display"
+                track-by="value"
+                @search-change="performSearch"
+                :class="errorClasses"
+                :placeholder="__('Search')"
+                :selectLabel="__('Press enter to select')"
+                :selectGroupLabel="__('Press enter to select group')"
+                :selectedLabel="__('Selected')"
+                :deselectLabel="__('Press enter to remove')"
+                :deselectGroupLabel="__('Press enter to deselect group')"
+                :internal-search="false"
             >
-
                 <template slot="beforeList" v-if="isLoading && !availableResources.length">
                     <span class="multiselect__option">
                         <loader with="30" />
@@ -48,17 +48,25 @@
             Multiselect
         },
 
-        props: ['resourceName', 'resourceIds', 'field'],
+        props: ['resourceName', 'field'],
 
         /**
          * Mount the component.
          */
         mounted() {
+            this.removeOverflowHidden()
             this.initializeComponent()
         },
 
         methods: {
             initializeComponent() {
+                this.isMultiple = this.field.multiple
+
+                if (this.isMultiple) {
+                    this.selectedResources = []
+                    this.selectedResourcesIds = []
+                }
+
                 if (this.field.resourceName) {
                     this.withTrashed = false
                     if (this.editingExistingResource) {
@@ -72,24 +80,25 @@
                 }
             },
 
+            removeOverflowHidden() {
+                let form = this.$refs.input.$el.closest('div[data-testid="confirm-action-modal"] form.overflow-hidden')
+
+                if (form !== undefined && form !== null && form.classList.contains('overflow-hidden')) {
+                    form.classList.remove('overflow-hidden')
+                }
+            },
+
             /**
              * Fill the forms formData with details from this field
              */
             fill(formData) {
-                formData.append(
-                    this.field.attribute,
-                    this.selectedResources.map(r => r.value)
-                )
+                if (this.isMultiple) {
+                    formData.append(this.field.attribute, this.selectedResources.map(r => r.value))
+                } else {
+                    formData.append(this.field.attribute, this.selectedResources.value)
+                }
 
                 formData.append(this.field.attribute + '_trashed', this.withTrashed)
-            },
-
-            /**
-             * Update the field's internal value.
-             */
-            handleChange(item) {
-                this.selectedResourcesIds = item.value || ''
-                this.selectInitialResources()
             },
         },
 
@@ -99,7 +108,11 @@
              */
             editingExistingResource() {
                 return Boolean(this.field.resourceIds.length)
-            }
+            },
+
+            isReadonly() {
+                return this.field.readonly || _.get(this.field, 'extraAttributes.readonly')
+            },
         }
     }
 </script>

@@ -69,7 +69,7 @@
             initializeComponent() {
                 if (this.value !== null && this.value !== undefined && this.value !== '') {
                     this.withTrashed = false
-                    this.initializingWithExistingResource = true
+                    this.initializingWithExistingResources = true
                     this.selectedResourceId = this.value
 
                     this.getAvailableResources().then(() => this.selectInitialResource())
