@@ -92,13 +92,17 @@
              * Fill the forms formData with details from this field
              */
             fill(formData) {
-                if (this.isMultiple) {
-                    formData.append(this.field.attribute, this.selectedResources.map(r => r.value))
-                } else {
-                    formData.append(this.field.attribute, this.selectedResources.value)
-                }
+                if (typeof this.selectedResources !== 'undefined' && this.selectedResources !== null) {
+                    if (this.isMultiple && Array.isArray(this.selectedResources) && this.selectedResources.length) {
+                        formData.append(this.field.attribute, this.selectedResources.map(r => r.value))
+                    } else {
+                        if (typeof this.selectedResources.value !== 'undefined' && this.selectedResources.value !== null) {
+                            formData.append(this.field.attribute, this.selectedResources.value)
+                        }
+                    }
 
-                formData.append(this.field.attribute + '_trashed', this.withTrashed)
+                    formData.append(this.field.attribute + '_trashed', this.withTrashed)
+                }
             },
         },
 
